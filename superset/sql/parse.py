@@ -367,6 +367,27 @@ class SQLStatement(BaseSQLStatement[exp.Expression]):
             for eq in set_item.find_all(exp.EQ)
         }
 
+    def get_predicates(self) -> list[exp.Predicate]:
+        """
+        Return the predicates for the SQL statement.
+
+            >>> statement = SQLStatement("SELECT * FROM table WHERE column = 'value'")
+            >>> statement.get_predicates()
+            ["COLUMN = 'value'"]
+        """
+        predicates = []
+        where_clauses = self._parsed.find_all(exp.Where)
+
+        if not where_clauses:
+            return []
+
+        for where_clause in where_clauses:
+            where_predicates = where_clause.find_all(exp.Predicate)
+            for pred in where_predicates:
+                predicates.append(pred)
+
+        return predicates
+
 
 class KQLSplitState(enum.Enum):
     """

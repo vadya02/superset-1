@@ -50,6 +50,7 @@ from sqlalchemy.sql.elements import ColumnElement, literal_column, TextClause
 from sqlalchemy.sql.expression import Label, Select, TextAsFrom
 from sqlalchemy.sql.selectable import Alias, TableClause
 from sqlalchemy_utils import UUIDType
+from sqlglot import exp
 
 from superset import app, db, is_feature_enabled
 from superset.advanced_data_type.types import AdvancedDataTypeResponse
@@ -1314,6 +1315,32 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
             )
         return and_(*l)
 
+    def get_rls_filters_for_column(
+        self, column_name: str, template_processor: BaseTemplateProcessor
+    ) -> list[TextClause]:
+        rls_filters_for_column = []
+
+        if rls_filters := self.get_sqla_row_level_filters(template_processor):
+            parsable_statement = "SELECT 1 WHERE"
+
+            for rls_filter in rls_filters:
+                parsable_statement += f" {str(rls_filter)} "
+                if rls_filter != rls_filters[-1]:
+                    parsable_statement += "AND"
+
+            predicates = SQLStatement(
+                parsable_statement, engine=self.db_engine_spec.engine
+            ).get_predicates()
+
+            for predicate in predicates:
+                column = predicate.find(exp.Column)
+                if column and column.output_name == column_name:
+                    rls_filters_for_column.append(
+                        TextClause(str(predicate.sql(comments=False)))
+                    )
+
+        return rls_filters_for_column
+
     def values_for_column(  # pylint: disable=too-many-locals
         self,
         column_name: str,
@@ -1350,9 +1377,8 @@ class ExploreMixin:  # pylint: disable=too-many-public-methods
         if self.fetch_values_predicate:
             qry = qry.where(self.get_fetch_values_predicate(template_processor=tp))
 
-        rls_filters = self.get_sqla_row_level_filters(template_processor=tp)
-        if rls_filters:
-            qry = qry.where(and_(*rls_filters))
+        if rls_filters := self.get_rls_filters_for_column(column_name, tp):
+            qry = qry.where(or_(*rls_filters))
 
         with self.database.get_sqla_engine() as engine:
             sql = str(qry.compile(engine, compile_kwargs={"literal_binds": True}))
