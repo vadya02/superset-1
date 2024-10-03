@@ -34,6 +34,11 @@ import {
 } from '@superset-ui/core';
 import { SeriesOption } from 'echarts';
 import {
+  MarkArea1DDataItemOption,
+  MarkArea2DDataItemOption,
+} from 'echarts/types/src/component/marker/MarkAreaModel';
+import { MarkLine1DDataItemOption } from 'echarts/types/src/component/marker/MarkLineModel';
+import {
   CallbackDataParams,
   DefaultStatesMixin,
   ItemStyleOption,
@@ -44,18 +49,18 @@ import {
   ZRLineType,
 } from 'echarts/types/src/util/types';
 import {
-  MarkArea1DDataItemOption,
-  MarkArea2DDataItemOption,
-} from 'echarts/types/src/component/marker/MarkAreaModel';
-import { MarkLine1DDataItemOption } from 'echarts/types/src/component/marker/MarkLineModel';
-import { extractForecastSeriesContext } from '../utils/forecast';
-import {
   EchartsTimeseriesSeriesType,
   ForecastSeriesEnum,
   LegendOrientation,
   StackType,
 } from '../types';
+import { extractForecastSeriesContext } from '../utils/forecast';
 
+import {
+  OpacityEnum,
+  StackControlsValue,
+  TIMESERIES_CONSTANTS,
+} from '../constants';
 import {
   evalFormula,
   extractRecordAnnotations,
@@ -63,11 +68,6 @@ import {
   parseAnnotationOpacity,
 } from '../utils/annotation';
 import { getChartPadding } from '../utils/series';
-import {
-  OpacityEnum,
-  StackControlsValue,
-  TIMESERIES_CONSTANTS,
-} from '../constants';
 
 // based on weighted wiggle algorithm
 // source: https://ieeexplore.ieee.org/document/4658136
